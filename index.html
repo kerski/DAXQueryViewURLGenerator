@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DAX Query View URL Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #0078d4;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        textarea {
+            min-height: 150px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            white-space: pre;
+        }
+        button {
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #005a9e;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f4f8;
+            border-radius: 4px;
+            word-break: break-all;
+        }
+        .result-url {
+            font-family: 'Consolas', 'Monaco', monospace;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .copy-btn {
+            margin-top: 10px;
+            background-color: #28a745;
+        }
+        .copy-btn:hover {
+            background-color: #218838;
+        }
+        .error {
+            color: #dc3545;
+            margin-top: 10px;
+        }
+        .example-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 14px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DAX Query View URL Generator</h1>
+        <h2 style="text-align: center; margin-top: -15px; font-size: 16px; color: #666;">By Sandeep Pawar with Claude 3.7 Sonnet</h2>
+        <div>
+            <label for="workspace-id">Workspace ID (GUID):</label>
+            <input type="text" id="workspace-id" placeholder="Enter workspace ID or GUID" required>
+            
+            <label for="dataset-id">Semantic Model ID (GUID):</label>
+            <input type="text" id="dataset-id" placeholder="Enter semantic model ID or GUID" required>
+            
+            <label for="dax-query">DAX Query:</label>
+            <textarea id="dax-query" placeholder="Enter your DAX query here" required>EVALUATE
+{
+    "Hello world!"
+}</textarea>
+            
+            <button id="generate-btn">Generate URL</button>
+        </div>
+        
+        <div id="result" class="result" style="display: none;">
+            <h3>Generated URL:</h3>
+            <div id="result-url" class="result-url"></div>
+            <button id="copy-btn" class="copy-btn">Copy URL</button>
+            <button id="open-btn" style="margin-top: 10px; margin-left: 10px; background-color: #0078d4;">Click to Open</button>
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div class="example-section">
+            <h3>How it works</h3>
+            <p>This tool generates a URL to share a DAX query in Power BI service by:</p>
+            <ol>
+                <li>Compressing the DAX query using GZIP</li>
+                <li>Encoding the compressed data in Base64</li>
+                <li>Making the encoded data URL-safe</li>
+                <li>Constructing the final URL with workspace and dataset IDs</li>
+            </ol>
+            <p>The generated URL will open the DAX Query View in the Power BI service, connected to your specified semantic model and using your query.</p>
+            <p><a href="https://learn.microsoft.com/en-us/power-bi/transform-model/dax-query-view#dax-query-view-in-web" target="_blank">Learn more about DAX Query View in Power BI</a></p>
+            <p><a href="https://semantic-link-labs.readthedocs.io/en/stable/sempy_labs.html#sempy_labs.generate_dax_query_view_url" target="_blank">Generate URL using Semantic Link Labs</a></p>
+        </div>
+    </div>
+    
+    <footer>
+        <p><a href="https://www.fabric.guru" target="_blank">www.fabric.guru</a></p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const generateBtn = document.getElementById('generate-btn');
+            const copyBtn = document.getElementById('copy-btn');
+            const resultDiv = document.getElementById('result');
+            const resultUrlDiv = document.getElementById('result-url');
+            const errorDiv = document.getElementById('error');
+            const openBtn = document.getElementById('open-btn');
+            
+            generateBtn.addEventListener('click', generateUrl);
+            copyBtn.addEventListener('click', copyUrl);
+            openBtn.addEventListener('click', openUrl);
+            
+            function generateUrl() {
+                try {
+                    // Clear previous results and errors
+                    errorDiv.style.display = 'none';
+                    resultDiv.style.display = 'none';
+                    
+                    // Get input values
+                    const workspaceId = document.getElementById('workspace-id').value.trim();
+                    const datasetId = document.getElementById('dataset-id').value.trim();
+                    const daxQuery = document.getElementById('dax-query').value;
+                    const environment = "app"; // Always use app.powerbi.com
+                    
+                    // Validate inputs
+                    if (!workspaceId || !datasetId || !daxQuery) {
+                        throw new Error('All fields are required');
+                    }
+                    
+                    // Generate URL
+                    const compressedQuery = gzipBase64UrlSafe(daxQuery);
+                    const url = `https://${environment}.powerbi.com/groups/${workspaceId}/modeling/${datasetId}/daxQueryView?query=${compressedQuery}`;
+                    
+                    // Display result
+                    resultUrlDiv.textContent = url;
+                    resultDiv.style.display = 'block';
+                } catch (error) {
+                    errorDiv.textContent = 'Error: ' + error.message;
+                    errorDiv.style.display = 'block';
+                }
+            }
+            
+            function gzipBase64UrlSafe(inputString) {
+                // Convert string to Uint8Array
+                const uint8Array = new TextEncoder().encode(inputString);
+                
+                // Compress with pako (GZIP)
+                const compressedData = pako.gzip(uint8Array);
+                
+                // Convert to base64
+                let base64Data = arrayBufferToBase64(compressedData);
+                
+                // Make URL-safe
+                return encodeURIComponent(base64Data);
+            }
+            
+            function arrayBufferToBase64(buffer) {
+                let binary = '';
+                const bytes = new Uint8Array(buffer);
+                const len = bytes.byteLength;
+                
+                for (let i = 0; i < len; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                
+                return btoa(binary);
+            }
+            
+            function copyUrl() {
+                const url = resultUrlDiv.textContent;
+                
+                // Create a temporary textarea element
+                const textarea = document.createElement('textarea');
+                textarea.value = url;
+                textarea.setAttribute('readonly', '');
+                textarea.style.position = 'absolute';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+                
+                // Select and copy the text
+                textarea.select();
+                let success = false;
+                try {
+                    success = document.execCommand('copy');
+                } catch (err) {
+                    console.error('Unable to copy', err);
+                }
+                
+                // Remove the temporary element
+                document.body.removeChild(textarea);
+                
+                if (success) {
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyBtn.textContent = originalText;
+                    }, 2000);
+                } else {
+                    errorDiv.textContent = 'Failed to copy. Please select and copy the URL manually.';
+                    errorDiv.style.display = 'block';
+                }
+            }
+            
+            function openUrl() {
+                const url = resultUrlDiv.textContent;
+                window.open(url, '_blank');
+            }
+            
+            // Pre-populate example query if it's empty
+            if (document.getElementById('dax-query').value === '') {
+                document.getElementById('dax-query').value = 'EVALUATE\n{\n    "Hello world!"\n}';
+            }
+        });
+    </script>
+</body>
+</html>
