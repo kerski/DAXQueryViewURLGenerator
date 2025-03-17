@@ -3,7 +3,8 @@
 A simple, elegant tool that generates shareable URLs for Power BI DAX Query View.
 
 ![DAX Query View URL Generator](https://user-images.githubusercontent.com/your-username/your-repo/main/screenshot.png)
-![Learn more from Zoe Douglas](https://www.youtube.com/live/FKMXG0Oga0Q?si=kslHvC1775JXo4eu)
+
+Overview by Zoe Douglas on DAX Query View URL : https://www.youtube.com/live/FKMXG0Oga0Q?si=kslHvC1775JXo4eu
 
 ## 🚀 Features
 
