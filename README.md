@@ -61,7 +61,7 @@ const url = `https://app.powerbi.com/groups/${workspaceId}/modeling/${datasetId}
 
 ### Using the Live Version
 
-Simply visit: [https://yourusername.github.io/dax-query-generator/](https://yourusername.github.io/dax-query-generator/)
+Simply visit: https://pawarbi.github.io/DAXQueryViewURLGenerator/
 
 ### Running Locally
 
