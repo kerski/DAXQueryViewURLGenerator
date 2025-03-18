@@ -93,6 +93,65 @@
             font-size: 14px;
             color: #6c757d;
         }
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 14px;
+            background-color: white;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+        select:focus {
+            border-color: #0078d4;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 120, 212, 0.5);
+        }
+
+        .tooltip {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+    }
+
+    .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 220px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%; /* Position above the text */
+        left: 50%;
+        margin-left: -110px; /* Center the tooltip */
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .info-icon {
+        font-style: normal;
+        border: 1px solid #ccc;
+        border-radius: 50%;
+        padding: 2px 6px;
+        background-color: #f1f1f1;
+        color: #333;
+        font-size: 12px;
+        margin-left: 5px;
+    }
+
+</style>        
     </style>
 </head>
 <body>
@@ -111,7 +170,21 @@
 {
     "Hello world!"
 }</textarea>
-            
+            <label for="envSelect">
+                Cloud: 
+                <span class="tooltip">
+                    <i class="info-icon">i</i>
+                    <span class="tooltiptext">The cloud environment to use when connecting to Power BI. Only change if you use a sovereign cloud!</span>
+                </span>
+            </label>
+            <select id="envSelect">
+                <option value="https://app.powerbi.com">Public</option>
+                <option value="https://app.powerbigov.us">US Gov</option>
+                <option value="https://app.high.powerbigov.us">US Gov High</option>
+                <option value="https://app.mil.powerbigov.us">US Gov DoD</option>
+                <option value="https://app.powerbigov.cn">China</option>
+                <option value="https://app.powerbi.de">Germany</option>
+            </select>
             <button id="generate-btn">Generate URL</button>
         </div>
         
@@ -150,11 +223,16 @@
             const resultDiv = document.getElementById('result');
             const resultUrlDiv = document.getElementById('result-url');
             const errorDiv = document.getElementById('error');
-            const openBtn = document.getElementById('open-btn');
-            
+            const openBtn = document.getElementById('open-btn'); 
+            const envSelect = document.getElementById('envSelect');           
+            let envVar = "https://app.powerbi.com"
+
             generateBtn.addEventListener('click', generateUrl);
             copyBtn.addEventListener('click', copyUrl);
             openBtn.addEventListener('click', openUrl);
+            envSelect.addEventListener('change', function() {
+                envVar = this.value;
+            });
             
             function generateUrl() {
                 try {
@@ -166,7 +244,7 @@
                     const workspaceId = document.getElementById('workspace-id').value.trim();
                     const datasetId = document.getElementById('dataset-id').value.trim();
                     const daxQuery = document.getElementById('dax-query').value;
-                    const environment = "app"; // Always use app.powerbi.com
+                    const environment = envVar;
                     
                     // Validate inputs
                     if (!workspaceId || !datasetId || !daxQuery) {
@@ -175,7 +253,7 @@
                     
                     // Generate URL
                     const compressedQuery = gzipBase64UrlSafe(daxQuery);
-                    const url = `https://${environment}.powerbi.com/groups/${workspaceId}/modeling/${datasetId}/daxQueryView?query=${compressedQuery}`;
+                    const url = `${environment}/groups/${workspaceId}/modeling/${datasetId}/daxQueryView?query=${compressedQuery}`;
                     
                     // Display result
                     resultUrlDiv.textContent = url;
